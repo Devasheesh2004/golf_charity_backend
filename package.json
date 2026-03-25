@@ -2,9 +2,10 @@
   "name": "impactgolf-backend",
   "version": "1.0.0",
   "description": "",
-  "main": "server.js",
+  "main": "dist/server.js",
   "scripts": {
     "start": "node dist/server.js",
+    "prestart": "npm run build",
     "dev": "ts-node src/server.ts",
     "build": "tsc"
   },
