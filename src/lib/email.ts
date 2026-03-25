@@ -23,7 +23,7 @@ const EMAIL_FROM = process.env.EMAIL_FROM || "ImpactGolf <onboarding@resend.dev>
 export const sendOTP = async (email: string, otp: string) => {
   try {
     const resend = getResend();
-    await resend.emails.send({
+    const { data, error } = await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
       subject: "Your ImpactGolf Verification Code",
@@ -41,9 +41,16 @@ export const sendOTP = async (email: string, otp: string) => {
         </div>
       `,
     });
+
+    if (error) {
+      console.error("Resend API logical error:", error);
+      return false;
+    }
+
+    console.log("Resend API success:", data);
     return true;
-  } catch (error) {
-    console.error("Error sending OTP via Resend:", error);
+  } catch (err) {
+    console.error("Resend API network/crash error:", err);
     return false;
   }
 };
