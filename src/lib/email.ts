@@ -3,13 +3,26 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+let resendClient: Resend | null = null;
+
+const getResend = () => {
+  if (!resendClient) {
+    const apiKey = process.env.RESEND_API_KEY;
+    if (!apiKey) {
+      console.error("CRITICAL: RESEND_API_KEY is missing from environment variables.");
+    }
+    resendClient = new Resend(apiKey);
+  }
+  return resendClient;
+};
+
 // Note: On Resend Free Tier, you must use onboarding@resend.dev as the sender 
 // until your domain is verified.
 const EMAIL_FROM = process.env.EMAIL_FROM || "ImpactGolf <onboarding@resend.dev>";
 
 export const sendOTP = async (email: string, otp: string) => {
   try {
+    const resend = getResend();
     await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
@@ -37,6 +50,7 @@ export const sendOTP = async (email: string, otp: string) => {
 
 export const sendSystemUpdate = async (emails: string[], title: string, content: string) => {
     try {
+        const resend = getResend();
         await resend.emails.send({
             from: EMAIL_FROM,
             to: emails,
@@ -63,6 +77,7 @@ export const sendSystemUpdate = async (emails: string[], title: string, content:
 
 export const sendDrawResults = async (emails: string[], winningNumbers: number[], prizePool: number) => {
   try {
+    const resend = getResend();
     await resend.emails.send({
       from: EMAIL_FROM,
       to: emails,
@@ -103,6 +118,7 @@ export const sendDrawResults = async (emails: string[], winningNumbers: number[]
 
 export const sendWinnerAlert = async (email: string, amount: number, matches: number) => {
   try {
+    const resend = getResend();
     await resend.emails.send({
       from: EMAIL_FROM,
       to: email,
