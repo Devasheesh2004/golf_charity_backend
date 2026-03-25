@@ -4,7 +4,9 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.gmail.com",
+  port: 465,
+  secure: true,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -91,7 +93,7 @@ export const sendDrawResults = async (emails: string[], winningNumbers: number[]
         </div>
 
         <div style="text-align: center; margin-top: 30px;">
-          <a href="http://localhost:3000/dashboard" style="background: #10b981; color: white; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: 900; display: inline-block;">Check My Results</a>
+          <a href="${process.env.FRONTEND_URL}/dashboard" style="background: #10b981; color: white; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: 900; display: inline-block;">Check My Results</a>
         </div>
         
         <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
@@ -135,7 +137,7 @@ export const sendWinnerAlert = async (email: string, amount: number, matches: nu
         </div>
 
         <div style="text-align: center; margin-top: 30px;">
-          <a href="http://localhost:3000/dashboard" style="background: #fbbf24; color: #451a03; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: 900; display: inline-block;">Verify & Claim Prize</a>
+          <a href="${process.env.FRONTEND_URL}/dashboard" style="background: #fbbf24; color: #451a03; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: 900; display: inline-block;">Verify & Claim Prize</a>
         </div>
       </div>
     `,
