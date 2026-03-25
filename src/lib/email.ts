@@ -1,31 +1,25 @@
-import { Resend } from "resend";
+import sgMail from "@sendgrid/mail";
 import dotenv from "dotenv";
 
 dotenv.config();
 
-let resendClient: Resend | null = null;
+// Initialize SendGrid
+if (process.env.SENDGRID_API_KEY) {
+  sgMail.setApiKey(process.env.SENDGRID_API_KEY);
+}
 
-const getResend = () => {
-  if (!resendClient) {
-    const apiKey = process.env.RESEND_API_KEY;
-    if (!apiKey) {
-      console.error("CRITICAL: RESEND_API_KEY is missing from environment variables.");
-    }
-    resendClient = new Resend(apiKey);
-  }
-  return resendClient;
-};
-
-// Note: On Resend Free Tier, you must use onboarding@resend.dev as the sender 
-// until your domain is verified.
-const EMAIL_FROM = process.env.EMAIL_FROM || "ImpactGolf <onboarding@resend.dev>";
+const EMAIL_FROM = process.env.EMAIL_FROM || "devasheesh.upreti@gmail.com";
 
 export const sendOTP = async (email: string, otp: string) => {
   try {
-    const resend = getResend();
-    const { data, error } = await resend.emails.send({
-      from: EMAIL_FROM,
+    if (!process.env.SENDGRID_API_KEY) {
+      console.error("CRITICAL: SENDGRID_API_KEY is missing.");
+      return false;
+    }
+
+    await sgMail.send({
       to: email,
+      from: EMAIL_FROM,
       subject: "Your ImpactGolf Verification Code",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
@@ -41,26 +35,20 @@ export const sendOTP = async (email: string, otp: string) => {
         </div>
       `,
     });
-
-    if (error) {
-      console.error("Resend API logical error:", error);
-      return false;
-    }
-
-    console.log("Resend API success:", data);
     return true;
-  } catch (err) {
-    console.error("Resend API network/crash error:", err);
+  } catch (error: any) {
+    console.error("SendGrid OTP Error:", error.response?.body || error.message);
     return false;
   }
 };
 
 export const sendSystemUpdate = async (emails: string[], title: string, content: string) => {
     try {
-        const resend = getResend();
-        await resend.emails.send({
-            from: EMAIL_FROM,
+        if (!process.env.SENDGRID_API_KEY) return false;
+
+        await sgMail.send({
             to: emails,
+            from: EMAIL_FROM,
             subject: `📢 System Update: ${title}`,
             html: `
               <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 12px;">
@@ -76,18 +64,19 @@ export const sendSystemUpdate = async (emails: string[], title: string, content:
             `,
         });
         return true;
-    } catch (err) {
-        console.error("Error sending system update via Resend:", err);
+    } catch (err: any) {
+        console.error("SendGrid System Update Error:", err.response?.body || err.message);
         return false;
     }
 };
 
 export const sendDrawResults = async (emails: string[], winningNumbers: number[], prizePool: number) => {
   try {
-    const resend = getResend();
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    if (!process.env.SENDGRID_API_KEY) return false;
+
+    await sgMail.send({
       to: emails,
+      from: EMAIL_FROM,
       subject: "🏆 Monthly Draw Results are In!",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #10b981; border-radius: 12px; background: #fdfdfd;">
@@ -115,20 +104,21 @@ export const sendDrawResults = async (emails: string[], winningNumbers: number[]
         </div>
       `,
     });
-    console.log(`[RESEND] Results sent to ${emails.length} subscribers`);
+    console.log(`[SENDGRID] Results sent to ${emails.length} subscribers`);
     return true;
-  } catch (err) {
-    console.error("Error sending draw results email via Resend:", err);
+  } catch (err: any) {
+    console.error("SendGrid Draw Results Error:", err.response?.body || err.message);
     return false;
   }
 };
 
 export const sendWinnerAlert = async (email: string, amount: number, matches: number) => {
   try {
-    const resend = getResend();
-    await resend.emails.send({
-      from: EMAIL_FROM,
+    if (!process.env.SENDGRID_API_KEY) return false;
+
+    await sgMail.send({
       to: email,
+      from: EMAIL_FROM,
       subject: "YOU WON! 🥇 Claim Your ImpactGolf Prize",
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: auto; padding: 20px; border: 1px solid #fbbf24; border-radius: 12px; background: #fffcf0;">
@@ -155,10 +145,10 @@ export const sendWinnerAlert = async (email: string, amount: number, matches: nu
         </div>
       `,
     });
-    console.log(`[RESEND WINNER] Prize alert sent to ${email}`);
+    console.log(`[SENDGRID WINNER] Prize alert sent to ${email}`);
     return true;
-  } catch (err) {
-    console.error("Error sending winner alert email via Resend:", err);
+  } catch (err: any) {
+    console.error("SendGrid Winner Alert Error:", err.response?.body || err.message);
     return false;
   }
 };
