@@ -16,38 +16,46 @@ router.post("/register", async (req: Request, res: Response) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     
+    const userRole = role || "subscriber";
     let otp: string | undefined = undefined;
     let otp_expires: string | undefined = undefined;
     
-    if (role !== "admin") {
+    if (userRole !== "admin") {
       otp = Math.floor(100000 + Math.random() * 900000).toString();
       otp_expires = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+      console.log(`[AUTH] Generated Registration OTP ${otp} for ${email}`);
     }
 
     const { data: newUser, error } = await supabase.from("users").insert({
       name, 
       email, 
       password: hashedPassword, 
-      role: role || "subscriber", 
+      role: userRole, 
       charity_recipient,
       otp, 
       otp_expires
     }).select().single();
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      console.error("[AUTH ERROR] User creation failed:", error.message);
+      throw new Error(error.message);
+    }
 
     if (otp) {
+      console.log(`[AUTH] Dispatching OTP email via SendGrid to ${email}...`);
       const emailSent = await sendOTP(email, otp);
       if (!emailSent) {
+        console.error(`[AUTH ERROR] SendGrid failed to send register OTP to ${email}. Rolling back user...`);
         await supabase.from("users").delete().eq("id", newUser.id);
         return res.status(500).json({ message: "Failed to send verification email." });
       }
+      console.log(`[AUTH SUCCESS] Register OTP sent to ${email}`);
     }
 
     res.status(201).json({ 
-      message: role === "admin" ? "Account Created" : "Email OTP sent", 
+      message: userRole === "admin" ? "Account Created" : "Email OTP sent", 
       email, 
-      otpRequired: role !== "admin" 
+      otpRequired: userRole !== "admin" 
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Error";
